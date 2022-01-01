@@ -38,6 +38,8 @@ allLevels : Array Level
 allLevels =
   Array.fromList
   [ Level "Chips" "potato_chips.jpg" "french_fries.jpg"
+  , Level "Torch" "torch.jpg" "flashlight.jpg"
+  , Level "Football" "football.jpg" "soccer_ball.jpg"
   ]
 
 
@@ -65,7 +67,7 @@ type alias Model =
 init : () -> (Model, Cmd Msg)
 init _ =
   ( Model 0 American 0
-  , Random.generate NewAnswer ( Random.Extra.choice American British )
+  , Random.generate NewCorrectAnswer ( Random.Extra.choice American British )
   )
 
 
@@ -73,7 +75,7 @@ init _ =
 
 
 type Msg
-  = NewAnswer Answer
+  = NewCorrectAnswer Answer
   | UserAnswer Answer
   | Reset
 
@@ -81,27 +83,28 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NewAnswer answer ->
+    NewCorrectAnswer answer ->
       ( { model | correctAnswer = answer }
       , Cmd.none
       )
     UserAnswer answer ->
-      ( case answer of
-          American ->
-            { model
-            | levelIndex = model.levelIndex + 1
-            , score = model.score + 1
-            }
-          British ->
-            { model
-            | levelIndex = model.levelIndex + 1
-            , score = model.score - 1
-            }
-      , Random.generate NewAnswer ( Random.Extra.choice American British )
+      ( { model
+        | levelIndex = model.levelIndex + 1
+        , score = model.score + getLevelScore model.correctAnswer answer
+        }
+      , Random.generate NewCorrectAnswer ( Random.Extra.choice American British )
       )
 
     Reset ->
       init ()
+
+
+getLevelScore : Answer -> Answer -> Int
+getLevelScore correctAnswer userAnswer =
+  if userAnswer == correctAnswer then
+    1
+  else
+    -1
 
 
 -- SUBSCRIPTIONS
