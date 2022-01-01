@@ -37,9 +37,9 @@ type alias Level =
 allLevels : Array Level
 allLevels =
   Array.fromList
-  [ Level "Chips" "potato_chips.jpg" "french_fries.jpg"
-  , Level "Torch" "torch.jpg" "flashlight.jpg"
-  , Level "Football" "football.jpg" "soccer_ball.jpg"
+  [ Level "chips" "potato_chips.jpg" "french_fries.jpg"
+  , Level "torch" "torch.jpg" "flashlight.jpg"
+  , Level "football" "football.jpg" "soccer_ball.jpg"
   ]
 
 
@@ -125,9 +125,8 @@ view model =
   , case ( Array.get model.levelIndex allLevels ) of
       Just level ->
         div []
-          [ div [] [text ( "Choose the " ++ ( answerString model.correctAnswer ) ++ " meaning" )]
+          [ div [] [text ( "Choose the " ++ ( answerString model.correctAnswer ) ++ " meaning for " ++ level.word )]
           , viewImage level.americanImageName American
-          , div [] [text level.word]
           , viewImage level.britishImageName British
           ]
 
@@ -135,6 +134,7 @@ view model =
         div [] [ text "Game over!" ]
   , button [ onClick Reset ] [ text "Reset" ]
   ]
+
 
 viewImage : String -> Answer -> Html Msg
 viewImage imageName answer =
