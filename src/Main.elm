@@ -123,7 +123,7 @@ view model =
   [ div [] [ text ("Score: " ++ String.fromInt model.score) ]
   , case (Array.get model.levelIndex allLevels) of
       Just level ->
-        div []
+        div gameStyle
           [ div [] [ text ("Choose the " ++ (answerString model.correctAnswer) ++ " meaning for " ++ level.word) ]
           , viewImage level.americanImageName American
           , viewImage level.britishImageName British
@@ -142,3 +142,16 @@ viewImage imageName answer =
     , onClick (UserAnswer answer)
     , height 100
     ] []
+
+
+-- STYLES
+
+
+gameStyle : List (Attribute msg)
+gameStyle =
+    [ style "text-align" "center"
+    , style "border-radius" "5px"
+    , style "background-color" "#f2f2f2"
+    , style "padding" "20px"
+    , style "width" "300px"
+    ]
