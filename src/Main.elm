@@ -9,7 +9,6 @@ import Random
 import Random.Extra
 
 
-
 -- MAIN
 
 
@@ -67,7 +66,7 @@ type alias Model =
 init : () -> (Model, Cmd Msg)
 init _ =
   ( Model 0 American 0
-  , Random.generate NewCorrectAnswer ( Random.Extra.choice American British )
+  , Random.generate NewCorrectAnswer (Random.Extra.choice American British)
   )
 
 
@@ -92,7 +91,7 @@ update msg model =
         | levelIndex = model.levelIndex + 1
         , score = model.score + getLevelScore model.correctAnswer answer
         }
-      , Random.generate NewCorrectAnswer ( Random.Extra.choice American British )
+      , Random.generate NewCorrectAnswer (Random.Extra.choice American British)
       )
 
     Reset ->
@@ -121,25 +120,25 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-  [ div [] [ text ( "Score: " ++ String.fromInt model.score ) ]
-  , case ( Array.get model.levelIndex allLevels ) of
+  [ div [] [ text ("Score: " ++ String.fromInt model.score) ]
+  , case (Array.get model.levelIndex allLevels) of
       Just level ->
         div []
-          [ div [] [text ( "Choose the " ++ ( answerString model.correctAnswer ) ++ " meaning for " ++ level.word )]
+          [ div [] [ text ("Choose the " ++ (answerString model.correctAnswer) ++ " meaning for " ++ level.word) ]
           , viewImage level.americanImageName American
           , viewImage level.britishImageName British
           ]
 
       Nothing ->
         div [] [ text "Game over!" ]
-  , button [ onClick Reset ] [ text "Reset" ]
+  , button [ onClick Reset ] [ text "Start over" ]
   ]
 
 
 viewImage : String -> Answer -> Html Msg
 viewImage imageName answer =
   img
-    [ src ( "resources/" ++ imageName )
-    , onClick ( UserAnswer answer )
+    [ src ("/resources/" ++ imageName)
+    , onClick (UserAnswer answer)
     , height 100
     ] []
