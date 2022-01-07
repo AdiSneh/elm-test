@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -27,17 +28,36 @@ main =
 
 type alias Level =
   { word: String
-  , americanImageName: String
-  , britishImageName: String
+  , imageNames: Dict String String
   }
 
 
 allLevels : List Level
 allLevels =
-  [ Level "chips" "potato_chips.jpg" "french_fries.jpg"
-  , Level "torch" "torch.jpg" "flashlight.jpg"
-  , Level "football" "football.jpg" "soccer_ball.jpg"
-  , Level "biscuit" "biscuit_bread.jpg" "biscuit_cookie.jpg"
+  [ Level "chips"
+    ( Dict.fromList
+      [ (answerString American, "potato_chips.jpg")
+      , (answerString British, "french_fries.jpg")
+      ]
+    )
+  , Level "torch"
+    ( Dict.fromList
+      [ (answerString American, "torch.jpg")
+      , (answerString British, "flashlight.jpg")
+      ]
+    )
+  , Level "football"
+    ( Dict.fromList
+      [ (answerString American, "football.jpg")
+      , (answerString British, "soccer_ball.jpg")
+      ]
+    )
+  , Level "biscuit"
+    ( Dict.fromList
+      [ (answerString American, "biscuit_bread.jpg")
+      , (answerString British, "biscuit_cookie.jpg")
+      ]
+    )
   ]
 
 
@@ -46,6 +66,7 @@ type Answer
   | British
 
 
+-- TODO: Code smell
 answerString : Answer -> String
 answerString answer =
   case answer of
@@ -59,6 +80,7 @@ type alias Model =
   { levelNumber: Int
   , levels: List Level
   , correctAnswer: Answer
+  , answerOrder: (Answer, Answer)
   , score: Int
   , lives: Int
   }
@@ -66,8 +88,9 @@ type alias Model =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( Model 1 allLevels American 0 3
-  , Random.generate NewCorrectAnswer (Random.Extra.choice American British)
+  -- TODO: I shouldn't have to pass initial values for variables that will be randomly generated
+  ( Model 1 allLevels American (American, British) 0 3
+  , Random.generate NewCorrectAnswer (Random.pair (Random.Extra.choice American British) (Random.Extra.choice American British))
   )
 
 
@@ -75,7 +98,7 @@ init _ =
 
 
 type Msg
-  = NewCorrectAnswer Answer
+  = NewCorrectAnswer (Answer, Answer)
   | UserAnswer Answer
   | Reset
 
@@ -83,19 +106,31 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NewCorrectAnswer answer ->
-      ( { model | correctAnswer = answer }
+    NewCorrectAnswer (correctAnswer, firstAnswer) ->
+      ( { model
+        | correctAnswer = correctAnswer
+        , answerOrder = getAnswerOrder firstAnswer
+        }
       , Cmd.none
       )
     UserAnswer answer ->
       ( updateWithUserAnswer model answer
           |> updateLevels
           |> updateLevelNumber
-      , Random.generate NewCorrectAnswer (Random.Extra.choice American British)
+      , Random.generate NewCorrectAnswer (Random.pair (Random.Extra.choice American British) (Random.Extra.choice American British))
       )
 
     Reset ->
       init ()
+
+
+getAnswerOrder : Answer -> (Answer, Answer)
+getAnswerOrder firstAnswer =
+  case firstAnswer of
+    American ->
+      (American, British)
+    British ->
+      (British, American)
 
 
 updateWithUserAnswer : Model -> Answer -> Model
@@ -150,9 +185,9 @@ view model =
         Just level ->
           div []
             [ div [] [ text ("Choose the " ++ (answerString model.correctAnswer) ++ " meaning for " ++ level.word) ]
-            -- TODO: Randomize the order of the images
-            , viewImage level.americanImageName American
-            , viewImage level.britishImageName British
+            -- TODO: Duplication
+            , viewImage level.imageNames (Tuple.first model.answerOrder)
+            , viewImage level.imageNames (Tuple.second model.answerOrder)
             ]
         Nothing ->
           div [] [ text "You win!" ]
@@ -160,10 +195,15 @@ view model =
   ]
 
 
-viewImage : String -> Answer -> Html Msg
-viewImage imageName answer =
-  img
-    [ src ("/resources/" ++ imageName)
-    , onClick (UserAnswer answer)
-    , height 100
-    ] []
+viewImage : Dict String String -> Answer -> Html Msg
+viewImage imageNames answer =
+  case (Dict.get (answerString answer) imageNames) of
+    Just imageName ->
+      img
+        [ src ("/resources/" ++ imageName)
+        , onClick (UserAnswer answer)
+        , height 100
+        ] []
+    -- TODO: Code smell
+    Nothing ->
+      div [] [text "An error has occurred"]
