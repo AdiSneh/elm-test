@@ -80,7 +80,7 @@ type alias Model =
   { levelNumber: Int
   , levels: List Level
   , correctAnswer: Answer
-  , answerOrder: (Answer, Answer)
+  , answers: (Answer, Answer)
   , score: Int
   , lives: Int
   }
@@ -90,15 +90,25 @@ init : () -> (Model, Cmd Msg)
 init _ =
   -- TODO: I shouldn't have to pass initial values for variables that will be randomly generated
   ( Model 1 allLevels American (American, British) 0 3
-  , Random.generate NewCorrectAnswer (Random.pair (Random.Extra.choice American British) (Random.Extra.choice American British))
+  , generateRandomAnswer
   )
+
+
+generateRandomAnswer : Cmd Msg
+generateRandomAnswer =
+  Random.generate GenerateAnswer (Random.pair randomAnswer randomAnswer)
+
+
+randomAnswer : Random.Generator Answer
+randomAnswer =
+  Random.Extra.choice American British
 
 
 -- UPDATE
 
 
 type Msg
-  = NewCorrectAnswer (Answer, Answer)
+  = GenerateAnswer (Answer, Answer)
   | UserAnswer Answer
   | Reset
 
@@ -106,10 +116,10 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NewCorrectAnswer (correctAnswer, firstAnswer) ->
+    GenerateAnswer (correctAnswer, firstAnswer) ->
       ( { model
         | correctAnswer = correctAnswer
-        , answerOrder = getAnswerOrder firstAnswer
+        , answers = getAnswers firstAnswer
         }
       , Cmd.none
       )
@@ -117,15 +127,15 @@ update msg model =
       ( updateWithUserAnswer model answer
           |> updateLevels
           |> updateLevelNumber
-      , Random.generate NewCorrectAnswer (Random.pair (Random.Extra.choice American British) (Random.Extra.choice American British))
+      , generateRandomAnswer
       )
 
     Reset ->
       init ()
 
 
-getAnswerOrder : Answer -> (Answer, Answer)
-getAnswerOrder firstAnswer =
+getAnswers : Answer -> (Answer, Answer)
+getAnswers firstAnswer =
   case firstAnswer of
     American ->
       (American, British)
@@ -185,9 +195,8 @@ view model =
         Just level ->
           div []
             [ div [] [ text ("Choose the " ++ (answerString model.correctAnswer) ++ " meaning for " ++ level.word) ]
-            -- TODO: Duplication
-            , viewImage level.imageNames (Tuple.first model.answerOrder)
-            , viewImage level.imageNames (Tuple.second model.answerOrder)
+            , viewImage level.imageNames (Tuple.first model.answers)
+            , viewImage level.imageNames (Tuple.second model.answers)
             ]
         Nothing ->
           div [] [ text "You win!" ]
